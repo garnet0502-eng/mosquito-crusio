@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>모기 복수 타이쿤 (25단계 고문 아케이드)</title>
+<style>
+  :root {
+    --bg-dark: #0f131a;
+    --panel: #181f2c;
+    --panel-2: #202a3b;
+    --accent: #ff5252;
+    --accent-2: #ffb300;
+    --cyan: #29b6f6;
+    --green: #66bb6a;
+    --text: #f3f6fa;
+    --muted: #9aa7bd;
+    --border: rgba(255,255,255,0.1);
+  }
+  * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    background: var(--bg-dark);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  header {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .title-group { display: flex; align-items: center; gap: 10px; }
+  .title-group h1 { font-size: 1.05rem; margin: 0; font-weight: 800; letter-spacing: -0.02em; }
+  .tier-badge {
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(255, 179, 0, 0.16);
+    color: var(--accent-2);
+    border: 1px solid rgba(255, 179, 0, 0.4);
+    font-weight: 700;
+  }
+  .hud-stats {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.88rem;
+  }
+  .stat-pill {
+    background: var(--panel-2);
+    padding: 5px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .stat-pill strong { color: var(--accent-2); font-variant-numeric: tabular-nums; }
+  .btn {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.08s ease, background 0.15s ease;
+  }
+  .btn:hover { background: #2a374e; }
+  .btn:active { transform: scale(0.97); }
+  .btn.primary { background: var(--accent); border-color: transparent; color: #fff; }
+  .btn.gold { background: var(--accent-2); border-color: transparent; color: #141414; }
+  .btn.active-tool {
+    background: var(--cyan);
+    color: #09131c;
+    border-color: transparent;
+    box-shadow: 0 0 0 2px rgba(41,182,246,0.35);
+  }
+
+  .main-layout {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 12px;
+    padding: 12px;
+    max-width: 1400px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  @media (max-width: 960px) {
+    .main-layout { grid-template-columns: 1fr; }
+  }
+
+  .stage-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+  }
+  .canvas-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    min-height: 360px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: #131822;
+    cursor: crosshair;
+  }
+  canvas { width: 100%; height: 100%; display: block; }
+
+  .overlay-start {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 14, 22, 0.86);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    text-align: center;
+    padding: 20px;
+    z-index: 5;
+  }
+  .overlay-start h2 { margin: 0; font-size: 1.4rem; }
+  .overlay-start p { margin: 0; color: var(--muted); max-width: 440px; font-size: 0.9rem; line-height: 1.5; }
+
+  .weapon-bar {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+  @media (max-width: 640px) {
+    .weapon-bar { grid-template-columns: repeat(3, 1fr); }
+  }
+  .w-slot {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 8px;
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.74rem;
+    line-height: 1.25;
+    color: var(--text);
+    transition: all 0.12s ease;
+  }
+  .w-slot.locked { opacity: 0.45; cursor: not-allowed; }
+  .w-slot.selected { border-color: var(--cyan); background: rgba(41,182,246,0.18); }
+  .w-slot .lv { font-weight: 800; color: var(--accent-2); display: block; }
+  .w-slot .nm { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .w-slot .mul { color: var(--green); font-weight: 700; }
+
+  .side-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 760px;
+    overflow-y: auto;
+  }
+  .tabs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .tab-btn {
+    padding: 7px 6px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--panel-2);
+    color: var(--muted);
+    font-weight: 700;
+    font-size: 0.78rem;
+    cursor: pointer;
+  }
+  .tab-btn.active { background: var(--accent); color: #fff; border-color: transparent; }
+
+  .upgrade-item, .dex-item {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 0.8rem;
+  }
+  .upgrade-top { display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
+  .upgrade-desc { color: var(--muted); font-size: 0.74rem; line-height: 1.35; }
+  .dex-grid { display: flex; flex-direction: column; gap: 6px; }
+  .dex-item.unlocked { border-color: rgba(102, 187, 106, 0.45); }
+  .dex-item.locked { opacity: 0.5; }
+  .bgm-box {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 10px;
+    font-size: 0.78rem;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .bgm-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  input[type="range"] { width: 110px; accent-color: var(--accent-2); }
+</style>
+</head>
+<body>
+<header>
+  <div class="title-group">
+    <h1>🦟 모기 복수 타이쿤</h1>
+    <span class="tier-badge" id="tierBadge">Tier 1 · 침실 재즈</span>
+  </div>
+  <div class="hud-stats">
+    <div class="stat-pill">LV <strong id="lvText">1</strong> <span id="xpText" style="color:var(--muted);font-size:0.75rem;">(0/3)</span></div>
+    <div class="stat-pill">골드 <strong id="goldText">0G</strong></div>
+    <div class="stat-pill">고통배율 <strong id="multText" style="color:var(--accent);">1.0x</strong></div>
+    <button class="btn" id="audioToggleBtn">🔊 사운드 ON</button>
+    <button class="btn" id="resetBtn">초기화</button>
+  </div>
+</header>
+
+<div class="main-layout">
+  <div class="stage-card">
+    <div class="canvas-wrap" id="canvasWrap">
+      <canvas id="gameCanvas" width="960" height="600"></canvas>
+      <div class="overlay-start" id="startOverlay">
+        <h2>윙윙거리는 밤의 복수전</h2>
+        <p>날아다니는 모기를 때려잡고 레벨을 올려 <strong>25단계 고문 무기</strong>를 해금하세요. 한 번에 즉사시키기보다 <strong>경련·날개 파손·감각 교란</strong> 상태를 누적시켜 마무리하면 고통 배율이 폭발해 더 많은 골드를 법니다!</p>
+        <button class="btn primary" id="startBtn" style="padding:10px 20px;font-size:0.95rem;">게임 시작 (BGM &amp; SFX ON)</button>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.78rem;color:var(--muted);padding:0 2px;">
+      <span>선택된 무기: <strong id="curWeaponLabel" style="color:var(--text);">Lv.1 맨손 짝! 스매시</strong></span>
+      <span>단축키 1~5 또는 아래 슬롯 클릭 · 황금 모기는 고배율 보너스!</span>
+    </div>
+    <div class="weapon-bar" id="weaponBar"></div>
+  </div>
+
+  <aside class="side-panel">
+    <div class="bgm-box">
+      <div class="bgm-row">
+        <span><strong>🎵 티어 연동 BGM</strong></span>
+        <span id="bgmName" style="color:var(--accent-2);font-weight:700;">침실 블루스/재즈</span>
+      </div>
+      <div class="bgm-row">
+        <span>BGM 볼륨</span>
+        <input type="range" id="bgmVol" min="0" max="1" step="0.05" value="0.35" />
+      </div>
+      <div class="bgm-row">
+        <span>효과음 볼륨</span>
+        <input type="range" id="sfxVol" min="0" max="1" step="0.05" value="0.65" />
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="upgrades">업그레이드</button>
+      <button class="tab-btn" data-tab="weapons">무기 선택(25)</button>
+      <button class="tab-btn" data-tab="dex">고문 도감</button>
+    </div>
+
+    <div id="tabContent" class="dex-grid"></div>
+  </aside>
+</div>
+
+<script>
+const WEAPONS = [
+  { lv: 1, tier: 1, name: "맨손 짝! 스매시", mult: 1.0, dmg: 35, agony: 18, effect: "stun", radius: 46, color: "#ff8a80", desc: "기본기. 빗나가면 윙윙 도발이 울립니다.", quote: "아이쿠 내 등짝!" },
+  { lv: 2, tier: 1, name: "엄지손가락 지압 고문", mult: 1.1, dmg: 42, agony: 26, effect: "crush", radius: 42, color: "#ffab91", desc: "비틀거리는 모기를 꾹 눌러 압박감을 줍니다.", quote: "숨 막혀요 사장님!" },
+  { lv: 3, tier: 1, name: "돌돌 만 신문지 강타", mult: 1.2, dmg: 55, agony: 30, effect: "stun", radius: 64, color: "#ffe082", desc: "묵직한 타격 범위로 벽면 압착 타격을 날립니다.", quote: "어제자 신문인데 왜 아파!" },
+  { lv: 4, tier: 1, name: "구멍 뚫린 파리채", mult: 1.3, dmg: 65, agony: 34, effect: "stun", radius: 74, color: "#a5d6a7", desc: "공기 저항을 줄인 빠른 스윙으로 연타가 쉽습니다.", quote: "바람 구멍이 왜 뚫려있어!" },
+  { lv: 5, tier: 1, name: "고무줄 새총 스나이핑", mult: 1.5, dmg: 85, agony: 42, effect: "pierce", radius: 36, color: "#f48fb1", desc: "정밀 저격 명중 시 높은 고통 배율을 안겨줍니다.", quote: "정통으로 맞았어 ㅠㅠ" },
+
+  { lv: 6, tier: 2, name: "투명 컵 독방 감금", mult: 1.6, dmg: 35, agony: 48, effect: "trap", radius: 82, color: "#80deea", desc: "좁은 공간에 가둬 패닉과 고통을 누적시킵니다.", quote: "출구가 안 보여! 투명해!" },
+  { lv: 7, tier: 2, name: "스카치테이프 다리 족쇄", mult: 1.8, dmg: 40, agony: 55, effect: "snare", radius: 68, color: "#fff59d", desc: "다리를 묶어 제자리 헛발질·탈진을 유도합니다.", quote: "내 다리가 접착제에 붙었어!" },
+  { lv: 8, tier: 2, name: "포스트잇 끈끈이 런웨이", mult: 2.0, dmg: 45, agony: 60, effect: "snare", radius: 72, color: "#ffcc80", desc: "붙었다 떼어졌다 반복하며 다리 힘을 뺍니다.", quote: "메모지 모델 워킹 강제 중..." },
+  { lv: 9, tier: 2, name: "입으로 '윙~' ASMR 복수", mult: 2.2, dmg: 30, agony: 68, effect: "disorient", radius: 85, color: "#ce93d8", desc: "귀에 대고 윙윙거려 멘탈을 흔듭니다.", quote: "그 소리는 내 특허인데?!" },
+  { lv: 10, tier: 2, name: "가짜 실리콘 피부 낚시", mult: 2.4, dmg: 42, agony: 74, effect: "disorient", radius: 76, color: "#f48fb1", desc: "뚫리지 않는 표면에 주둥이를 꽂게 해 좌절시킵니다.", quote: "주둥이가 안 들어가! 고장 났나?" },
+
+  { lv: 11, tier: 3, name: "분무기 미세 물폭탄", mult: 2.6, dmg: 55, agony: 62, effect: "wing", radius: 92, color: "#4fc3f7", desc: "물방울 표면장력으로 날개를 무겁게 만들어 추락시킵니다.", quote: "날개가 젖어서 추락한다!" },
+  { lv: 12, tier: 3, name: "주방세제(퐁퐁) 거품 샤워", mult: 2.9, dmg: 68, agony: 75, effect: "wing", radius: 96, color: "#81d4fa", desc: "방수 코팅을 무너뜨려 기문을 막는 지속 타격.", quote: "내 왁스 코팅이 녹아내려!" },
+  { lv: 13, tier: 3, name: "고농도 에탄올 스프레이", mult: 3.2, dmg: 82, agony: 82, effect: "spasm", radius: 90, color: "#b39ddb", desc: "알코올 증기로 비틀거리게 만들고 경련을 유발합니다.", quote: "어지러워... 100도도 안 되는데 취해!" },
+  { lv: 14, tier: 3, name: "식초·멘솔 이중 자극", mult: 3.5, dmg: 92, agony: 88, effect: "spasm", radius: 88, color: "#80cbc4", desc: "시큼함과 화끈·시림을 동시에 줘 감각을 교란합니다.", quote: "눈물 나고 시려 죽겠어!" },
+  { lv: 15, tier: 3, name: "DEET 기피제 밀폐 챔버", mult: 3.8, dmg: 105, agony: 95, effect: "disorient", radius: 94, color: "#aed581", desc: "감각 수용체 과부하로 방향 감각을 상실시킵니다.", quote: "여기가 위야 아래야?!" },
+
+  { lv: 16, tier: 4, name: "스마트폰 플래시 스트로보", mult: 4.2, dmg: 95, agony: 85, effect: "disorient", radius: 110, color: "#fff176", desc: "초고속 점멸 빛으로 시신경을 흔듭니다.", quote: "눈부셔! 겹눈이 폭발할 것 같아!" },
+  { lv: 17, tier: 4, name: "스피커 진동 & 천적 사운드", mult: 4.6, dmg: 110, agony: 92, effect: "spasm", radius: 115, color: "#ff8a65", desc: "우퍼 진동과 천적 사운드로 날개 리듬을 붕괴시킵니다.", quote: "박쥐다!! 살려줘!!" },
+  { lv: 18, tier: 4, name: "헤어드라이어 열풍기", mult: 5.0, dmg: 135, agony: 98, effect: "burn", radius: 100, color: "#ff7043", desc: "고온 바람으로 날개를 쪼그라뜨리는 열충격.", quote: "날개가 오그라들어 바삭해져!" },
+  { lv: 19, tier: 4, name: "진공청소기 와류 흡입", mult: 5.5, dmg: 155, agony: 100, effect: "vortex", radius: 112, color: "#90caf9", desc: "초고속 기류와 원심력으로 빨아들여 난타합니다.", quote: "회오리 세탁기다아아악!" },
+  { lv: 20, tier: 4, name: "냉동실 급속 동결 해동", mult: 6.0, dmg: 170, agony: 100, effect: "freeze", radius: 105, color: "#84ffff", desc: "급속 냉각과 해동을 반복해 신경을 얼려버립니다.", quote: "영하 18도라니 얄짤없네!" },
+
+  { lv: 21, tier: 5, name: "전기 파리채 '스파크 찜질'", mult: 6.8, dmg: 190, agony: 100, effect: "shock", radius: 95, color: "#ffd54f", desc: "전류를 짧게 스쳐 신경 경련을 극대화합니다.", quote: "찌지직! 다리가 제멋대로 떨려!" },
+  { lv: 22, tier: 5, name: "UV-A 포충광 시신경 직격", mult: 7.6, dmg: 220, agony: 100, effect: "shock", radius: 118, color: "#ea80fc", desc: "고에너지 자외선으로 시력을 교란하고 탈진시킵니다.", quote: "보라색 빛기둥이 너무 강해!" },
+  { lv: 23, tier: 5, name: "식충식물(파리지옥) 투입", mult: 8.5, dmg: 260, agony: 100, effect: "crush", radius: 92, color: "#66bb6a", desc: "강력한 턱과 소화 효소로 압박하는 생태 피니시.", quote: "초록 잎 문이 닫혔어!" },
+  { lv: 24, tier: 5, name: "고압 테슬라 코일 방전", mult: 9.5, dmg: 310, agony: 100, effect: "shock", radius: 125, color: "#40c4ff", desc: "사방에서 번개가 튀며 연속 경련 콤보를 넣습니다.", quote: "과학 실험체 신세라니!" },
+  { lv: 25, tier: 5, name: "[궁극기] 오비탈 썬더 빔", mult: 12.0, dmg: 500, agony: 100, effect: "orbital", radius: 165, color: "#ffeb3b", desc: "천장을 뚫고 내려오는 거대 빛기둥으로 초토화!", quote: "궤도 병기까지 동원한다고?!" }
+];
+
+const TIER_META = {
+  1: { badge: "Tier 1 · 침실 재즈", bgmName: "한밤의 침실 재즈 루프", tempoMs: 420, notes: [220, 261.63, 293.66, 329.63, 293.66, 261.63, 196, 246.94], wave: "triangle" },
+  2: { badge: "Tier 2 · 끈끈이 펑크", bgmName: "끈적한 리듬 펑크 베이스", tempoMs: 340, notes: [146.83, 174.61, 220, 261.63, 293.66, 261.63, 196, 174.61], wave: "sawtooth" },
+  3: { badge: "Tier 3 · 스프레이 일렉트로", bgmName: "버블 스프레이 신스 펄스", tempoMs: 260, notes: [329.63, 392, 440, 523.25, 440, 392, 349.23, 293.66], wave: "square" },
+  4: { badge: "Tier 4 · 극한 아드레날린", bgmName: "열풍·와류 드라이브 비트", tempoMs: 200, notes: [164.81, 220, 246.94, 329.63, 369.99, 329.63, 246.94, 196], wave: "sawtooth" },
+  5: { badge: "Tier 5 · 오비탈 피날레", bgmName: "오비탈 썬더 에픽 신스", tempoMs: 165, notes: [220, 329.63, 440, 659.25, 587.33, 440, 392, 493.88], wave: "square" }
+};
+
+class SoundEngine {
+  constructor() {
+    this.ctx = null;
+    this.enabled = false;
+    this.bgmVol = 0.35;
+    this.sfxVol = 0.65;
+    this.bgmTimer = null;
+    this.stepIdx = 0;
+    this.currentTier = 1;
+  }
+  ensure() {
+    if (!this.ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      this.ctx = new AC();
+    }
+    if (this.ctx.state === "suspended") this.ctx.resume();
+  }
+  start(tier = 1) {
+    this.ensure();
+    this.enabled = true;
+    this.currentTier = tier;
+    this.startBgmLoop();
+  }
+  stop() {
+    this.enabled = false;
+    if (this.bgmTimer) {
+      clearInterval(this.bgmTimer);
+      this.bgmTimer = null;
+    }
+  }
+  setTier(tier) {
+    if (this.currentTier === tier) return;
+    this.currentTier = tier;
+    this.stepIdx = 0;
+    if (this.enabled) this.startBgmLoop();
+  }
+  startBgmLoop() {
+    if (this.bgmTimer) clearInterval(this.bgmTimer);
+    const meta = TIER_META[this.currentTier] || TIER_META[1];
+    this.bgmTimer = setInterval(() => {
+      if (!this.enabled || !this.ctx || this.bgmVol <= 0.005) return;
+      const now = this.ctx.currentTime;
+      const freq = meta.notes[this.stepIdx % meta.notes.length];
+      this.stepIdx++;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = meta.wave;
+      osc.frequency.setValueAtTime(freq, now);
+      if (this.currentTier >= 4) {
+        osc.frequency.exponentialRampToValueAtTime(freq * 1.03, now + (meta.tempoMs / 1000) * 0.7);
+      }
+      const peak = this.bgmVol * 0.07;
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.linearRampToValueAtTime(peak, now + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + (meta.tempoMs / 1000) * 0.85);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + (meta.tempoMs / 1000) * 0.9);
+    }, meta.tempoMs);
+  }
+  playHit(effect, hitSomething) {
+    if (!this.enabled || !this.ctx || this.sfxVol <= 0.005) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    const vol = Math.min(0.45, this.sfxVol * 0.35);
+
+    if (!hitSomething) {
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(620, now);
+      osc.frequency.exponentialRampToValueAtTime(840, now + 0.08);
+      osc.frequency.exponentialRampToValueAtTime(540, now + 0.18);
+      gain.gain.setValueAtTime(vol * 0.45, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
+      osc.connect(gain); gain.connect(this.ctx.destination);
+      osc.start(now); osc.stop(now + 0.2);
+      return;
+    }
+
+    if (effect === "shock" || effect === "orbital") {
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(1400, now);
+      osc.frequency.exponentialRampToValueAtTime(110, now + 0.22);
+      gain.gain.setValueAtTime(vol, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.23);
+    } else if (effect === "wing" || effect === "spasm") {
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(520, now);
+      osc.frequency.linearRampToValueAtTime(220, now + 0.16);
+      gain.gain.setValueAtTime(vol * 0.85, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.17);
+    } else {
+      osc.type = "square";
+      osc.frequency.setValueAtTime(210, now);
+      osc.frequency.exponentialRampToValueAtTime(65, now + 0.11);
+      gain.gain.setValueAtTime(vol * 0.8, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+    }
+    osc.connect(gain); gain.connect(this.ctx.destination);
+    osc.start(now); osc.stop(now + 0.25);
+  }
+  playKill(bonus) {
+    if (!this.enabled || !this.ctx || this.sfxVol <= 0.005) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = "triangle";
+    const base = bonus >= 2 ? 660 : 480;
+    osc.frequency.setValueAtTime(base, now);
+    osc.frequency.setValueAtTime(base * 1.25, now + 0.06);
+    gain.gain.setValueAtTime(Math.min(0.4, this.sfxVol * 0.3), now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+    osc.connect(gain); gain.connect(this.ctx.destination);
+    osc.start(now); osc.stop(now + 0.17);
+  }
+  playLevelUp() {
+    if (!this.enabled || !this.ctx || this.sfxVol <= 0.005) return;
+    const now = this.ctx.currentTime;
+    [523.25, 659.25, 783.99, 1046.5].forEach((f, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(f, now + idx * 0.06);
+      gain.gain.setValueAtTime(Math.min(0.4, this.sfxVol * 0.28), now + idx * 0.06);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.14);
+      osc.connect(gain); gain.connect(this.ctx.destination);
+      osc.start(now + idx * 0.06); osc.stop(now + idx * 0.06 + 0.15);
+    });
+  }
+}
+
+const sfx = new SoundEngine();
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+const DEFAULT_STATE = {
+  level: 1,
+  xp: 0,
+  gold: 0,
+  selectedWeaponLv: 1,
+  unlockedMaxLv: 1,
+  activeTab: "upgrades",
+  upgrades: {
+    radiusLv: 0,
+    agonyLv: 0,
+    goldLv: 0,
+    goldenRateLv: 0
+  }
+};
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem("mosquito_tycoon_v1");
+    if (!raw) return structuredClone(DEFAULT_STATE);
+    const parsed = JSON.parse(raw);
+    return {
+      ...structuredClone(DEFAULT_STATE),
+      ...parsed,
+      upgrades: { ...structuredClone(DEFAULT_STATE.upgrades), ...(parsed.upgrades || {}) }
+    };
+  } catch {
+    return structuredClone(DEFAULT_STATE);
+  }
+}
+
+let state = loadState();
+function saveState() {
+  try { localStorage.setItem("mosquito_tycoon_v1", JSON.stringify(state)); } catch {}
+}
+
+function xpNeededFor(lv) {
+  return Math.max(3, Math.round(2.5 + lv * 1.35));
+}
+
+function currentWeapon() {
+  return WEAPONS.find(w => w.lv === state.selectedWeaponLv) || WEAPONS[0];
+}
+
+let mosquitoes = [];
+let popups = [];
+let ripples = [];
+let screenShake = 0;
+
+function spawnMosquito(forceGolden = false) {
+  const goldenChance = 0.12 + state.upgrades.goldenRateLv * 0.05;
+  const isGolden = forceGolden || Math.random() < goldenChance;
+  const baseHp = 35 + state.level * 16 + (isGolden ? 45 : 0);
+  const speed = (1.6 + Math.min(3.4, state.level * 0.12)) * (isGolden ? 1.25 : 1);
+  const angle = Math.random() * Math.PI * 2;
+  mosquitoes.push({
+    id: Math.random().toString(36).slice(2, 8),
+    x: 80 + Math.random() * (canvas.width - 160),
+    y: 70 + Math.random() * (canvas.height - 140),
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    hp: baseHp,
+    maxHp: baseHp,
+    agony: 0, // 0 ~ 100
+    status: "flying", // flying, stunned, wing_broken, spasm, trapped
+    statusTimer: 0,
+    isGolden,
+    quote: "",
+    quoteTimer: 0,
+    wingPhase: Math.random() * Math.PI * 2
+  });
+}
+
+function ensureMosquitoes() {
+  const targetCount = Math.min(7, 3 + Math.floor(state.level / 4));
+  while (mosquitoes.length < targetCount) spawnMosquito();
+}
+
+function addPopup(x, y, text, color = "#ffd54f") {
+  popups.push({ x, y, text, color, life: 1.0, vy: -38 });
+}
+
+function applyAttack(px, py) {
+  const w = currentWeapon();
+  const radiusBonus = 1 + state.upgrades.radiusLv * 0.12;
+  const radius = w.radius * radiusBonus;
+  ripples.push({ x: px, y: py, r: 8, maxR: radius, color: w.color, alpha: 0.9 });
+
+  let hitAny = false;
+  const agonyMult = 1 + state.upgrades.agonyLv * 0.18;
+  const goldUpMult = 1 + state.upgrades.goldLv * 0.2;
+
+  for (let i = mosquitoes.length - 1; i >= 0; i--) {
+    const m = mosquitoes[i];
+    const dist = Math.hypot(m.x - px, m.y - py);
+    if (dist <= radius + 18) {
+      hitAny = true;
+      const painFactor = 1 + (m.agony / 100) * 1.35;
+      const dmgDealt = Math.round(w.dmg * (w.effect === "orbital" ? 1.5 : 1) * painFactor);
+      m.hp -= dmgDealt;
+
+      const addedAgony = Math.min(100, m.agony + w.agony * agonyMult);
+      m.agony = addedAgony;
+      m.statusTimer = 1.6;
+
+      if (w.effect === "wing") m.status = "wing_broken";
+      else if (w.effect === "spasm" || w.effect === "shock") m.status = "spasm";
+      else if (w.effect === "trap" || w.effect === "snare") m.status = "trapped";
+      else m.status = "stunned";
+
+      m.quote = w.quote;
+      m.quoteTimer = 1.1;
+
+      // Knockback / jitter
+      m.x += (Math.random() - 0.5) * 28;
+      m.y += (Math.random() - 0.5) * 28;
+
+      if (m.hp <= 0) {
+        const painBonusMult = 1 + (m.agony / 100) * 1.5;
+        const goldenMult = m.isGolden ? 2.5 : 1.0;
+        const earned = Math.max(
+          5,
+          Math.round((12 + state.level * 5) * w.mult * painBonusMult * goldUpMult * goldenMult)
+        );
+        state.gold += earned;
+        state.xp += m.isGolden ? 2 : 1;
+
+        const badgeStr = painBonusMult >= 1.8 ? `고통x${painBonusMult.toFixed(1)} ` : "";
+        addPopup(m.x, m.y - 12, `+${earned}G (${badgeStr}처치!)`, m.isGolden ? "#ffeb3b" : "#66bb6a");
+        sfx.playKill(painBonusMult);
+
+        while (state.xp >= xpNeededFor(state.level)) {
+          state.xp -= xpNeededFor(state.level);
+          state.level += 1;
+          if (state.level <= 25 && state.level > state.unlockedMaxLv) {
+            state.unlockedMaxLv = state.level;
+            state.selectedWeaponLv = state.level;
+          }
+          sfx.playLevelUp();
+          addPopup(canvas.width / 2, canvas.height / 2 - 30, `LEVEL UP! Lv.${state.level}`, "#29b6f6");
+        }
+
+        mosquitoes.splice(i, 1);
+        saveState();
+      } else {
+        addPopup(m.x, m.y - 10, `-${dmgDealt} (고통 ${Math.round(m.agony)}%)`, "#ff8a80");
+      }
+    }
+  }
+
+  if (w.effect === "orbital" || w.effect === "shock") {
+    screenShake = Math.max(screenShake, 8);
+  } else if (hitAny) {
+    screenShake = Math.max(screenShake, 3);
+  }
+  sfx.playHit(w.effect, hitAny);
+  ensureMosquitoes();
+  renderHUD();
+}
+
+canvas.addEventListener("pointerdown", (e) => {
+  if (document.getElementById("startOverlay").style.display !== "none") return;
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const x = (e.clientX - rect.left) * scaleX;
+  const y = (e.clientY - rect.top) * scaleY;
+  applyAttack(x, y);
+});
+
+function update(dt) {
+  ensureMosquitoes();
+  if (screenShake > 0) screenShake = Math.max(0, screenShake - dt * 28);
+
+  for (const m of mosquitoes) {
+    m.wingPhase += dt * (m.status === "wing_broken" ? 4 : 26);
+    if (m.quoteTimer > 0) m.quoteTimer = Math.max(0, m.quoteTimer - dt);
+
+    let speedFactor = 1;
+    if (m.statusTimer > 0) {
+      m.statusTimer = Math.max(0, m.statusTimer - dt);
+      if (m.status === "trapped") speedFactor = 0.12;
+      else if (m.status === "wing_broken") speedFactor = 0.25;
+      else if (m.status === "spasm") {
+        speedFactor = 0.45;
+        m.x += (Math.random() - 0.5) * 140 * dt;
+        m.y += (Math.random() - 0.5) * 140 * dt;
+      } else speedFactor = 0.55;
+    } else {
+      m.status = "flying";
+    }
+
+    if (Math.random() < 0.025) {
+      const sp = Math.hypot(m.vx, m.vy) || 2;
+      const ang = Math.atan2(m.vy, m.vx) + (Math.random() - 0.5) * 1.4;
+      m.vx = Math.cos(ang) * sp;
+      m.vy = Math.sin(ang) * sp;
+    }
+
+    m.x += m.vx * speedFactor * dt * 60;
+    m.y += m.vy * speedFactor * dt * 60;
+
+    if (m.x < 36) { m.x = 36; m.vx = Math.abs(m.vx); }
+    if (m.x > canvas.width - 36) { m.x = canvas.width - 36; m.vx = -Math.abs(m.vx); }
+    if (m.y < 36) { m.y = 36; m.vy = Math.abs(m.vy); }
+    if (m.y > canvas.height - 36) { m.y = canvas.height - 36; m.vy = -Math.abs(m.vy); }
+  }
+
+  for (let i = popups.length - 1; i >= 0; i--) {
+    const p = popups[i];
+    p.y += p.vy * dt;
+    p.life -= dt * 1.15;
+    if (p.life <= 0) popups.splice(i, 1);
+  }
+
+  for (let i = ripples.length - 1; i >= 0; i--) {
+    const r = ripples[i];
+    r.r += (r.maxR - r.r) * Math.min(1, dt * 18) + dt * 120;
+    r.alpha -= dt * 2.6;
+    if (r.alpha <= 0) ripples.splice(i, 1);
+  }
+}
+
+function draw() {
+  ctx.save();
+  if (screenShake > 0) {
+    ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
+  }
+
+  // Room background subtly tinted by current tier
+  const w = currentWeapon();
+  const tierColors = ["#141a26", "#181626", "#132129", "#241719", "#1f182b"];
+  ctx.fillStyle = tierColors[(w.tier - 1) % tierColors.length];
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Subtle grid lines
+  ctx.strokeStyle = "rgba(255,255,255,0.035)";
+  ctx.lineWidth = 1;
+  for (let gx = 0; gx < canvas.width; gx += 60) {
+    ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, canvas.height); ctx.stroke();
+  }
+  for (let gy = 0; gy < canvas.height; gy += 60) {
+    ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(canvas.width, gy); ctx.stroke();
+  }
+
+  // Mosquitoes
+  for (const m of mosquitoes) {
+    ctx.save();
+    ctx.translate(m.x, m.y);
+
+    // Wings
+    const flap = Math.sin(m.wingPhase) * 0.65;
+    ctx.fillStyle = m.isGolden ? "rgba(255, 235, 59, 0.55)" : "rgba(220, 235, 255, 0.45)";
+    ctx.beginPath();
+    ctx.ellipse(-8, -8, 11, 5, -0.5 + flap, 0, Math.PI * 2);
+    ctx.ellipse(8, -8, 11, 5, 0.5 - flap, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Body
+    ctx.fillStyle = m.isGolden ? "#ffd54f" : "#dce4f0";
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 7, 13, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#111";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Stripes & proboscis
+    ctx.fillStyle = m.isGolden ? "#e65100" : "#263238";
+    ctx.fillRect(-5, -3, 10, 2.5);
+    ctx.fillRect(-5, 3, 10, 2.5);
+    ctx.beginPath();
+    ctx.moveTo(0, -13);
+    ctx.lineTo(0, -21);
+    ctx.stroke();
+
+    // HP & Agony bars above mosquito
+    const barW = 36;
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    ctx.fillRect(-barW / 2, -32, barW, 5);
+    ctx.fillStyle = m.isGolden ? "#ffeb3b" : "#ef5350";
+    ctx.fillRect(-barW / 2, -32, barW * Math.max(0, m.hp / m.maxHp), 5);
+
+    if (m.agony > 0) {
+      ctx.fillStyle = "rgba(0,0,0,0.6)";
+      ctx.fillRect(-barW / 2, -26, barW, 4);
+      ctx.fillStyle = "#ff9800";
+      ctx.fillRect(-barW / 2, -26, barW * (m.agony / 100), 4);
+    }
+
+    // Speech bubble
+    if (m.quoteTimer > 0 && m.quote) {
+      ctx.font = "700 12px sans-serif";
+      const tw = ctx.measureText(m.quote).width + 12;
+      ctx.fillStyle = "rgba(255,255,255,0.94)";
+      ctx.beginPath();
+      ctx.roundRect(-tw / 2, -56, tw, 20, 6);
+      ctx.fill();
+      ctx.fillStyle = "#111";
+      ctx.textAlign = "center";
+      ctx.fillText(m.quote, 0, -42);
+    }
+    ctx.restore();
+  }
+
+  // Attack ripples
+  for (const r of ripples) {
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, r.alpha);
+    ctx.strokeStyle = r.color;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Floating popups
+  for (const p of popups) {
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, p.life);
+    ctx.font = "800 14px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillStyle = p.color;
+    ctx.fillText(p.text, p.x, p.y);
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+let lastTime = performance.now();
+function loop(now) {
+  const dt = Math.min(0.05, (now - lastTime) / 1000);
+  lastTime = now;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+function renderHUD() {
+  const w = currentWeapon();
+  const tierMeta = TIER_META[w.tier] || TIER_META[1];
+  sfx.setTier(w.tier);
+
+  document.getElementById("tierBadge").textContent = tierMeta.badge;
+  document.getElementById("bgmName").textContent = tierMeta.bgmName;
+  document.getElementById("lvText").textContent = state.level;
+  document.getElementById("xpText").textContent = `(${state.xp}/${xpNeededFor(state.level)})`;
+  document.getElementById("goldText").textContent = `${state.gold.toLocaleString()}G`;
+  const maxAgonyBonus = 1 + (1 + state.upgrades.agonyLv * 0.18) * 1.5;
+  document.getElementById("multText").textContent = `${w.mult.toFixed(1)}x (최대 ${maxAgonyBonus.toFixed(1)}x)`;
+  document.getElementById("curWeaponLabel").textContent = `Lv.${w.lv} ${w.name} (${w.mult.toFixed(1)}x)`;
+  document.getElementById("audioToggleBtn").textContent = sfx.enabled ? "🔊 사운드 ON" : "🔇 사운드 OFF";
+
+  renderWeaponBar();
+  renderSideTab();
+}
+
+function renderWeaponBar() {
+  const bar = document.getElementById("weaponBar");
+  bar.innerHTML = "";
+  const startLv = Math.max(1, Math.min(21, state.selectedWeaponLv - 2));
+  const slice = WEAPONS.slice(startLv - 1, startLv + 4);
+  slice.forEach((w) => {
+    const unlocked = w.lv <= state.unlockedMaxLv;
+    const btn = document.createElement("button");
+    btn.className = `w-slot ${unlocked ? "" : "locked"} ${state.selectedWeaponLv === w.lv ? "selected" : ""}`;
+    btn.innerHTML = `
+      <span class="lv">Lv.${w.lv} <span class="mul">${w.mult.toFixed(1)}x</span></span>
+      <div class="nm">${unlocked ? w.name : "🔒 Lv." + w.lv + " 해금"}</div>
+    `;
+    btn.onclick = () => {
+      if (!unlocked) return;
+      state.selectedWeaponLv = w.lv;
+      saveState();
+      renderHUD();
+    };
+    bar.appendChild(btn);
+  });
+}
+
+const UPGRADE_DEFS = [
+  { key: "radiusLv", name: "타격·분사 범위 확장", baseCost: 35, step: 1.55, desc: "클릭·분사 범위가 레벨당 +12% 넓어집니다." },
+  { key: "agonyLv", name: "고통 축적 효율", baseCost: 50, step: 1.6, desc: "타격 시 고통 게이지 상승량과 최대 고통 배율이 커집니다." },
+  { key: "goldLv", name: "고통 정산 골드 보너스", baseCost: 60, step: 1.65, desc: "처치 시 획득 골드가 레벨당 +20% 증가합니다." },
+  { key: "goldenRateLv", name: "황금 모기 출현 확률", baseCost: 80, step: 1.7, desc: "2.5배 골드를 주는 황금 모기 등장 확률을 높입니다." }
+];
+
+function renderSideTab() {
+  const box = document.getElementById("tabContent");
+  box.innerHTML = "";
+
+  if (state.activeTab === "upgrades") {
+    UPGRADE_DEFS.forEach((u) => {
+      const lv = state.upgrades[u.key];
+      const cost = Math.round(u.baseCost * Math.pow(u.step, lv));
+      const div = document.createElement("div");
+      div.className = "upgrade-item";
+      div.innerHTML = `
+        <div class="upgrade-top">
+          <span>${u.name} (Lv.${lv})</span>
+          <button class="btn gold" style="padding:4px 9px;font-size:0.74rem;" ${state.gold < cost ? "disabled" : ""}>${cost}G 강화</button>
+        </div>
+        <div class="upgrade-desc">${u.desc}</div>
+      `;
+      div.querySelector("button").onclick = () => {
+        if (state.gold < cost) return;
+        state.gold -= cost;
+        state.upgrades[u.key] += 1;
+        saveState();
+        renderHUD();
+      };
+      box.appendChild(div);
+    });
+  } else if (state.activeTab === "weapons") {
+    WEAPONS.forEach((w) => {
+      const unlocked = w.lv <= state.unlockedMaxLv;
+      const div = document.createElement("div");
+      div.className = `dex-item ${unlocked ? "unlocked" : "locked"}`;
+      div.innerHTML = `
+        <div class="upgrade-top">
+          <span>Lv.${w.lv} · ${w.name}</span>
+          <span style="color:var(--green);">${w.mult.toFixed(1)}x</span>
+        </div>
+        <div class="upgrade-desc">${unlocked ? w.desc : `플레이어 레벨 ${w.lv} 달성 시 해금`}</div>
+      `;
+      if (unlocked) {
+        div.style.cursor = "pointer";
+        div.onclick = () => {
+          state.selectedWeaponLv = w.lv;
+          saveState();
+          renderHUD();
+        };
+      }
+      box.appendChild(div);
+    });
+  } else {
+    WEAPONS.forEach((w) => {
+      const unlocked = w.lv <= state.unlockedMaxLv;
+      const div = document.createElement("div");
+      div.className = `dex-item ${unlocked ? "unlocked" : "locked"}`;
+      div.innerHTML = `
+        <div class="upgrade-top">
+          <span>#${w.lv} ${unlocked ? w.name : "???"}</span>
+          <span style="color:var(--accent-2);">Tier ${w.tier}</span>
+        </div>
+        <div class="upgrade-desc">${unlocked ? `“${w.quote}”` : "아직 해금되지 않은 고문 수단입니다."}</div>
+      `;
+      box.appendChild(div);
+    });
+  }
+}
+
+document.getElementById("startBtn").onclick = () => {
+  document.getElementById("startOverlay").style.display = "none";
+  sfx.start(currentWeapon().tier);
+  renderHUD();
+};
+
+document.getElementById("audioToggleBtn").onclick = () => {
+  if (sfx.enabled) sfx.stop();
+  else sfx.start(currentWeapon().tier);
+  renderHUD();
+};
+
+document.getElementById("bgmVol").oninput = (e) => {
+  sfx.bgmVol = parseFloat(e.target.value);
+};
+document.getElementById("sfxVol").oninput = (e) => {
+  sfx.sfxVol = parseFloat(e.target.value);
+};
+
+document.querySelectorAll(".tab-btn").forEach((btn) => {
+  btn.onclick = () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    state.activeTab = btn.dataset.tab;
+    renderSideTab();
+  };
+});
+
+window.addEventListener("keydown", (e) => {
+  const num = parseInt(e.key, 10);
+  if (num >= 1 && num <= 5) {
+    const startLv = Math.max(1, Math.min(21, state.selectedWeaponLv - 2));
+    const target = WEAPONS[startLv - 1 + (num - 1)];
+    if (target && target.lv <= state.unlockedMaxLv) {
+      state.selectedWeaponLv = target.lv;
+      saveState();
+      renderHUD();
+    }
+  }
+});
+
+document.getElementById("resetBtn").onclick = () => {
+  state = structuredClone(DEFAULT_STATE);
+  saveState();
+  mosquitoes = [];
+  ensureMosquitoes();
+  renderHUD();
+};
+
+ensureMosquitoes();
+renderHUD();
+</script>
+</body>
+</html>
